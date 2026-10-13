@@ -51,3 +51,7 @@ land in that worktree's `.scratch/`.
 claude plugin validate .
 claude plugin test .
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE).
