@@ -1,12 +1,12 @@
 {
-  "name": "comment-mode",
+  "name": "claude-browser-comment-mod",
   "owner": {
     "name": "Poom"
   },
-  "description": "Poom's comment-mode plugin: preview comments to Claude.",
+  "description": "Claude Browser Comment Mod: comments left on a dev server's page reach Claude Code as prompts.",
   "plugins": [
     {
-      "name": "comment-mode",
+      "name": "claude-browser-comment-mod",
       "source": "./"
     }
   ]

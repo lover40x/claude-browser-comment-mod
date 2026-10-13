@@ -1,6 +1,6 @@
 import { appendFile, mkdir } from "node:fs/promises";
 
-// Dev only: the comment overlay (app/dev-comments.tsx) posts here, and the comment-mode plugin reads the file and
+// Dev only: the comment overlay (app/dev-comments.tsx) posts here, and the Claude Browser Comment Mod plugin reads the file and
 // hands each new line to Claude. Gone outside `next dev`.
 export async function POST(request: Request) {
   if (process.env.NODE_ENV !== "development") return new Response(null, { status: 404 });

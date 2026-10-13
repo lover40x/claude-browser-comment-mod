@@ -1,4 +1,4 @@
-# comment-mode
+# Claude Browser Comment Mod
 
 Comment on a running app like on an Artifact: click any element in the dev server's page, write a comment, and it
 reaches the Claude Code session working in that folder as a prompt, with the page's path, the element's selector and
@@ -16,11 +16,11 @@ Two halves:
 In a terminal session (`claude`), once:
 
 ```
-/plugin install comment-mode --marketplace lover40x/comment-mode
+/plugin install claude-browser-comment-mod --marketplace lover40x/claude-browser-comment-mod
 ```
 
 Answer `y` to add the marketplace and pick the user scope: it then runs in every session. From a local copy, name its
-folder instead: `--marketplace ~/path/to/comment-mode`.
+folder instead: `--marketplace ~/path/to/claude-browser-comment-mod`.
 
 ## Add the overlay to a Next.js app
 

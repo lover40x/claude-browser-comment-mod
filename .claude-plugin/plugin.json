@@ -1,1 +1,1 @@
-{"name": "comment-mode", "version": "0.2.0", "description": "Hands comments left on a dev server's preview overlay (.scratch/preview-comments.jsonl in the session's folder) to Claude as prompts.", "author": {"name": "Poom"}}
+{"name": "claude-browser-comment-mod", "version": "0.2.0", "description": "Hands comments left on a dev server's preview overlay (.scratch/preview-comments.jsonl in the session's folder) to Claude as prompts.", "author": {"name": "Poom"}}

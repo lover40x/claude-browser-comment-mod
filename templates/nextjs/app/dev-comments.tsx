@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Dev only (app/layout.tsx mounts it under `next dev`): click any element, write a comment, and it lands in
-// .scratch/preview-comments.jsonl through /api/dev/comments, where the comment-mode plugin hands it to Claude.
+// .scratch/preview-comments.jsonl through /api/dev/comments, where the Claude Browser Comment Mod plugin hands it to Claude.
 
 type Target = { el: Element; rect: DOMRect };
 
