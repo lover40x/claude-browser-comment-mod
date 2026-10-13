@@ -1,0 +1,13 @@
+{
+  "name": "comment-mode",
+  "owner": {
+    "name": "Poom"
+  },
+  "description": "Poom's comment-mode plugin: preview comments to Claude.",
+  "plugins": [
+    {
+      "name": "comment-mode",
+      "source": "./"
+    }
+  ]
+}
