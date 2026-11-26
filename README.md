@@ -56,6 +56,10 @@ One session per folder receives its comments; the others leave the file alone. T
 - `/comments here` makes this session receive them, until a session is started there later or another runs it.
 - `/comments` alone says who receives them.
 - When the receiving session ends, the newest one left takes over within 2 seconds (after a crash, run `/comments here`).
+- A session's folder is its project root, checked every 2 seconds: when it moves (the desktop app starts a session in
+  a spare folder and then moves it into the project, or `/cd`, or a worktree), it gives up the old folder and reads the
+  new one from where that folder's comments stand. Before 0.3.1 it kept the first folder, so a desktop app session
+  read the spare folder and never got a comment.
 
 After installing or updating the plugin, restart the sessions already open: a running session keeps the version it
 started with, and one from before 0.3.0 still sends every folder's comments to whichever session reads first.
