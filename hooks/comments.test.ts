@@ -2,7 +2,7 @@ import type { EngineInterface } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 
 import { promptFor, take } from './comments'
-import { claim, type Me, owns, release, takeNew } from './register'
+import { claim, type Me, moveTo, owns, release, takeNew } from './register'
 
 const line = (comment: string) =>
   JSON.stringify({ at: 't', path: '/dashboard', selector: 'main > h1', text: 'Overview', comment }) + '\n'
@@ -96,6 +96,26 @@ test('the newest session receives, until another claims the folder', async () =>
   // A session started after the claim is the most recent claim.
   expect(await owns($, { session: 'newest', startedAt: 4 }, '/repo')).toBe(true)
   expect(await owns($, old, '/repo')).toBe(false)
+})
+
+test('a session moved into the project (a desktop spare folder) reads the project from then on', async () => {
+  const $ = shared()
+  const older = { session: 'older', startedAt: 1 }
+  const desk = { session: 'desk', startedAt: 5 }
+  // An older session has read the project's 3 comments; the desktop session starts in a spare folder with none.
+  await tick($, older, '/repo', lines(3))
+  await tick($, older, '/repo', lines(3))
+  let folder = await moveTo($, desk, undefined, '/spares/spare-1')
+  expect(await tick($, desk, folder!, '')).toEqual([])
+  expect(await $.store.get('owner:/spares/spare-1')).toEqual({ session: 'desk', at: 5 })
+
+  // The host moves it into the project: it gives the spare up, and as the newest session there it reads the
+  // project from where its comments stand, so nothing old is resent.
+  folder = await moveTo($, desk, folder, '/repo')
+  expect(await $.store.get('owner:/spares/spare-1')).toBeUndefined()
+  expect(await tick($, desk, folder!, lines(3))).toEqual([])
+  expect(await tick($, desk, folder!, lines(4))).toEqual(['c3'])
+  expect(await tick($, older, '/repo', lines(4))).toEqual([])
 })
 
 test('only the receiving session sends, and a folder it leaves goes to the newest', async () => {

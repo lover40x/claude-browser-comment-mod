@@ -52,10 +52,19 @@ export async function takeNew($: EngineInterface, me: Me, folder: string, file: 
   return fresh
 }
 
-// The real path of the folder the session reads files in, so a worktree and its main checkout never share a key
-// whatever cwd the session reports.
+// The real path of the session's project folder, so a worktree and its main checkout never share a key whatever cwd
+// the session reports. Read on every tick, never kept: a desktop app session starts in a spare folder and is then moved
+// into the project (which deletes the spare), and `/cd` or a worktree move change it too.
 async function folderOf($: EngineInterface): Promise<string | undefined> {
-  return (await $.fs.stat('.', { resolve: true }).catch(() => null))?.realPath
+  const root = await $.session.root().catch(() => '.')
+  return (await $.fs.stat(root, { resolve: true }).catch(() => null))?.realPath
+}
+
+// The session's folder is now `to`: it gives up the folder it left, so the newest session there takes it, and reads
+// `to` by the usual rules (owns, takeNew), from that folder's own position.
+export async function moveTo($: EngineInterface, me: Me, from: string | undefined, to: string | undefined): Promise<string | undefined> {
+  if (from && from !== to) await release($, me, from)
+  return to
 }
 
 export const register: Register = on => {
@@ -74,8 +83,9 @@ export const register: Register = on => {
 
     // ponytail: polls every 2s; a file watch if the API grows one
     $.clock.every(2000, async () => {
-      const dir = (folder ??= await folderOf($))
-      if (!dir || !me) return
+      if (!me) return
+      const dir = (folder = await moveTo($, me, folder, await folderOf($)))
+      if (!dir) return
       const isOwner = await owns($, me, dir)
       const status = isOwner ? 'Comments: here' : 'Comments: another session'
       if (status !== shown) $.ui.status((shown = status))
@@ -94,8 +104,9 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'comments' }, async ($, e) => {
-    const dir = (folder ??= await folderOf($))
-    if (!dir || !me) return { text: 'Comments: this session has no folder to read.' }
+    if (!me) return { text: 'Comments: this session has no folder to read.' }
+    const dir = (folder = await moveTo($, me, folder, await folderOf($)))
+    if (!dir) return { text: 'Comments: this session has no folder to read.' }
     if (e.args.trim() === 'here') {
       await claim($, me, dir, await $.clock.now())
       $.ui.status((shown = 'Comments: here'))
