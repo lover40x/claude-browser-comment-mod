@@ -17,11 +17,11 @@ Two halves:
 In a terminal session (`claude`), once:
 
 ```
-/plugin install claude-browser-comment-mod --marketplace lover40x/claude-browser-comment-mod
+/plugin install claude-browser-comment-mod --marketplace lover40x/claude-mod-local-comment
 ```
 
 Answer `y` to add the marketplace and pick the user scope: it then runs in every session. From a local copy, name its
-folder instead: `--marketplace ~/path/to/claude-browser-comment-mod`.
+folder instead: `--marketplace ~/path/to/claude-mod-local-comment`.
 
 ## Add the overlay to a Next.js app
 
