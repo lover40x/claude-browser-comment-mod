@@ -50,9 +50,9 @@ checkout's: when the dev server runs in the main checkout, comment to a session 
 ## Which session receives the comments
 
 One session per folder receives its comments; the others leave the file alone. The line under the prompt says which:
-`🟢 Comment-mod v<version>` when this session receives them, `🔴 Comment-mod v<version>` when another session does.
-While it's red, a **Move to this session** button beside it takes the comments here
-(the same as `/comments here`).
+`🟢 Comment-mod v<version>` when this session receives them, `🔴 Comment-mod v<version>` when another session does. Clicking it
+opens a row above the prompt that says where the comments go, with a **Move to this session** button while another
+session receives them (the same as `/comments here`) and **Hide**.
 
 - By default the newest session started in the folder receives them.
 - `/comments here` makes this session receive them, until a session is started there later or another runs it.

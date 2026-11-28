@@ -2,7 +2,7 @@ import type { EngineInterface } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 
 import { promptFor, take } from './comments'
-import { claim, type Me, moveTo, owns, release, statusFor, takeNew } from './register'
+import { claim, colorFor, detailFor, type Me, moveTo, owns, release, statusFor, takeNew } from './register'
 
 const line = (comment: string) =>
   JSON.stringify({ at: 't', path: '/dashboard', selector: 'main > h1', text: 'Overview', comment }) + '\n'
@@ -132,7 +132,10 @@ test('only the receiving session sends, and a folder it leaves goes to the newes
   expect(await tick($, b, '/repo', lines(3))).toEqual(['c2'])
 })
 
-test('the status line is a dot and the short name with the version', () => {
-  expect(statusFor(true, '0.3.2')).toBe('🟢 Comment-mod v0.3.2')
-  expect(statusFor(false, '0.3.2')).toBe('🔴 Comment-mod v0.3.2')
+test('the status is a dot and the short name with the version, green here and red elsewhere', () => {
+  expect(statusFor(true, '0.3.3')).toBe('🟢 Comment-mod v0.3.3')
+  expect(statusFor(false, '0.3.3')).toBe('🔴 Comment-mod v0.3.3')
+  expect(colorFor(true)).toBe('success')
+  expect(colorFor(false)).toBe('error')
+  expect(detailFor(false)).toBe('Another session receives the dev overlay comments')
 })
