@@ -67,13 +67,39 @@ export async function moveTo($: EngineInterface, me: Me, from: string | undefine
   return to
 }
 
+// The row above the prompt: 🟢 this session receives the folder's comments, 🔴 another one does.
+export const statusFor = (isOwner: boolean, version: string) => `${isOwner ? '🟢' : '🔴'} Comment-mod v${version}`
+const LEGEND = '🟢 this session receives the dev overlay comments · 🔴 another session does'
+
+// What the row draws: whether this session receives the folder's comments, unknown (no row) until the first tick.
+type View = { isOwner?: boolean }
+
+function show($: EngineInterface, view: View, isOwner: boolean): void {
+  if (view.isOwner === isOwner) return
+  view.isOwner = isOwner
+  $.ui.invalidate('ui.render')
+}
+
+// `/comments here` and the row's button: this session takes the folder's comments.
+async function takeHere($: EngineInterface, me: Me, view: View, dir: string): Promise<void> {
+  await claim($, me, dir, await $.clock.now())
+  show($, view, true)
+}
+
 export const register: Register = on => {
   let me: Me | undefined
   let folder: string | undefined
-  let shown: string | undefined
+  const view: View = {}
+  let version = '?'
 
   on('session.start', async ($, e, next) => {
     me = { session: await $.session.id(), startedAt: await $.clock.now() }
+    version = await $.fs
+      .read(`${$.plugin.root}/.claude-plugin/plugin.json`)
+      .then(text => String(JSON.parse(text).version ?? '?'))
+      .catch(() => '?')
+    // 0.3.1 and earlier pinned a status line; this version draws on the hint line instead.
+    $.ui.status(undefined)
     await $.command.register({
       name: 'comments',
       description: 'Shows which session receives the dev server overlay comments; `here` makes it this one',
@@ -87,8 +113,7 @@ export const register: Register = on => {
       const dir = (folder = await moveTo($, me, folder, await folderOf($)))
       if (!dir) return
       const isOwner = await owns($, me, dir)
-      const status = isOwner ? 'Comments: here' : 'Comments: another session'
-      if (status !== shown) $.ui.status((shown = status))
+      show($, view, isOwner)
       if (!isOwner) return
 
       const file = await $.fs.read(`${dir}/${FILE}`).catch(() => null)
@@ -107,16 +132,34 @@ export const register: Register = on => {
     if (!me) return { text: 'Comments: this session has no folder to read.' }
     const dir = (folder = await moveTo($, me, folder, await folderOf($)))
     if (!dir) return { text: 'Comments: this session has no folder to read.' }
-    if (e.args.trim() === 'here') {
-      await claim($, me, dir, await $.clock.now())
-      $.ui.status((shown = 'Comments: here'))
-    }
+    if (e.args.trim() === 'here') await takeHere($, me, view, dir)
     const isOwner = await owns($, me, dir)
     return {
-      text: isOwner
-        ? `Comments from ${dir}/${FILE} come to this session.`
-        : `Another session receives the comments from ${dir}/${FILE}. Run /comments here to take them.`,
+      text:
+        (isOwner
+          ? `Comments from ${dir}/${FILE} come to this session.`
+          : `Another session receives the comments from ${dir}/${FILE}. Run /comments here to take them.`) +
+        `\n${LEGEND}`,
     }
+  })
+
+  // On the hint line under the prompt, after the engine's own hint; while another session receives, a button takes the
+  // comments here. No hover legend: the desktop draws that line's hidden Boxes anyway, so `/comments` explains instead.
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    const isOwner = view.isOwner
+    if (isOwner === undefined) return next(e)
+    const { Box, Button, Text } = $.ui.resolve(e)
+    return (
+      <Box gap={2}>
+        {await next(e)}
+        <Box key="comment-mod" gap={1}>
+          <Text dimColor>{statusFor(isOwner, version)}</Text>
+          {isOwner ? null : (
+            <Button key="move" label="Move to this session" onPress={() => (me && folder ? takeHere($, me, view, folder) : undefined)} />
+          )}
+        </Box>
+      </Box>
+    )
   })
 
   // `clear` keeps the process (and the person at it) going under a new id, so it keeps its folders.
