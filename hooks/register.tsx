@@ -67,16 +67,28 @@ export async function moveTo($: EngineInterface, me: Me, from: string | undefine
   return to
 }
 
-// The row above the prompt: 🟢 this session receives the folder's comments, 🔴 another one does.
+// The status under the prompt, drawn green (the theme's `success`) while this session receives the folder's comments
+// and red (`error`) while another one does.
+// The dot is an emoji: the desktop draws a chip nested in another plugin's hint as a grey pill, dropping Text colours,
+// and an emoji keeps its own.
 export const statusFor = (isOwner: boolean, version: string) => `${isOwner ? '🟢' : '🔴'} Comment-mod v${version}`
-const LEGEND = '🟢 this session receives the dev overlay comments · 🔴 another session does'
+export const colorFor = (isOwner: boolean) => (isOwner ? 'success' : 'error')
+// The details row above the prompt, opened by a click on the status: where the comments go now.
+export const detailFor = (isOwner: boolean) =>
+  isOwner ? 'This session receives the dev overlay comments' : 'Another session receives the dev overlay comments'
 
-// What the row draws: whether this session receives the folder's comments, unknown (no row) until the first tick.
-type View = { isOwner?: boolean }
+// What is drawn: whether this session receives the folder's comments, unknown (nothing drawn) until the first tick;
+// and whether the details row above the prompt is open.
+type View = { isOwner?: boolean; isOpen?: boolean }
 
 function show($: EngineInterface, view: View, isOwner: boolean): void {
   if (view.isOwner === isOwner) return
   view.isOwner = isOwner
+  $.ui.invalidate('ui.render')
+}
+
+function setOpen($: EngineInterface, view: View, isOpen: boolean): void {
+  view.isOpen = isOpen
   $.ui.invalidate('ui.render')
 }
 
@@ -135,29 +147,45 @@ export const register: Register = on => {
     if (e.args.trim() === 'here') await takeHere($, me, view, dir)
     const isOwner = await owns($, me, dir)
     return {
-      text:
-        (isOwner
-          ? `Comments from ${dir}/${FILE} come to this session.`
-          : `Another session receives the comments from ${dir}/${FILE}. Run /comments here to take them.`) +
-        `\n${LEGEND}`,
+      text: isOwner
+        ? `Comments from ${dir}/${FILE} come to this session.`
+        : `Another session receives the comments from ${dir}/${FILE}. Run /comments here to take them.`,
     }
   })
 
-  // On the hint line under the prompt, after the engine's own hint; while another session receives, a button takes the
-  // comments here. No hover legend: the desktop draws that line's hidden Boxes anyway, so `/comments` explains instead.
+  // A chip on the hint line under the chat box, beside the app's own hints: green while this session receives the
+  // comments, red while another one does. The desktop draws that line whole, hidden Boxes included, so nothing there
+  // waits for a hover: a click opens the details row above the prompt, where buttons draw as meant.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    const engine = await next(e)
     const isOwner = view.isOwner
-    if (isOwner === undefined) return next(e)
+    if (isOwner === undefined) return engine
     const { Box, Button, Text } = $.ui.resolve(e)
     return (
-      <Box gap={2}>
-        {await next(e)}
-        <Box key="comment-mod" gap={1}>
-          <Text dimColor>{statusFor(isOwner, version)}</Text>
-          {isOwner ? null : (
-            <Button key="move" label="Move to this session" onPress={() => (me && folder ? takeHere($, me, view, folder) : undefined)} />
-          )}
-        </Box>
+      <Box flexDirection="row" gap={2}>
+        {engine}
+        {/* No `label`: given one, the desktop draws it plain, in place of the coloured Text. */}
+        <Button key="comment-mod" plain onPress={() => setOpen($, view, !view.isOpen)}>
+          <Text color={colorFor(isOwner)}>{statusFor(isOwner, version)}</Text>
+        </Button>
+      </Box>
+    )
+  })
+
+  // The details, above the prompt while opened: where the comments go, Move to this session while another session
+  // receives them, and Hide.
+  on('ui.render', { component: 'AbovePrompt' }, ($, e, next) => {
+    const isOwner = view.isOwner
+    if (e.props.hasSurvey || !view.isOpen || isOwner === undefined) return next(e)
+    const { Box, Button, Text } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="row" gap={1}>
+        <Text color={colorFor(isOwner)}>●</Text>
+        <Text>{detailFor(isOwner)}</Text>
+        {isOwner ? null : (
+          <Button key="move" label="Move to this session" plain onPress={() => (me && folder ? takeHere($, me, view, folder) : undefined)} />
+        )}
+        <Button key="hide" label="Hide" plain dimColor onPress={() => setOpen($, view, false)} />
       </Box>
     )
   })
